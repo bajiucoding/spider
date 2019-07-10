@@ -29,6 +29,8 @@ class Spider():
         self.JobHTMLAnalysis = JobHTMLAnalysis()
         self.DetailHTMLAnalysis = DetailHTMLAnalysis()
         self.DataClass = DataClass()
+        self.query = 'python'                     #设定要查询的职位
+        self.page = 1                              #设定要查询的职位列表页面数
 
     def crawl(self,root_url):
         '''
@@ -55,9 +57,18 @@ class Spider():
                 new_urls,data = self.DetailHTMLAnalysis.parse(new_url,html)
 
             self.URLManager.addNewUrl(new_urls)
-            self.DataClass.WriteTxt(data)
+
+            #将结果写入文件
+            self.DataClass.WriteCSV(data.values())
             logger.info('已经爬取了'+str(self.URLManager.oldUrlsSize())+'个链接')
+
+    def spiderGo(self):
+        root_url = 'https://www.zhipin.com/c101280600/?query={}&page={}&ka=page-{}'.format(self.query,self.page,self.page)
+        self.crawl(root_url)
+        self.page += 1
 
 if __name__=='__main__':
     spider = Spider()
-    spider.crawl('https://www.zhipin.com/c101280600/?query=python&page=1&ka=page-1')
+    #向csv文件中写入标题
+    DataClass().csvHelper()
+    spider.spiderGo()

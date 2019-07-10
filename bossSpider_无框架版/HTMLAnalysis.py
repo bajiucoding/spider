@@ -17,6 +17,9 @@ import re
 from log import Bosslogger
 
 logger = Bosslogger('HTMLAnalysis')
+
+job_info = {}
+
 class HTMLAnalysis(metaclass=ABCMeta):
     #HTML文本解析类，不同HTML对应不同的解析方法
 
@@ -64,7 +67,6 @@ class JobHTMLAnalysis(HTMLAnalysis):
         logger.info('开始从职位列表页面解析新的url，即职位详情')
         new_urls = set()
         jobs = soup.find_all('div','job-primary')
-        hrefs = []
         for job in jobs:
             href = job.find('div','info-primary').find('a')['href']
             new_url = urljoin(url,href)
@@ -81,8 +83,10 @@ class JobHTMLAnalysis(HTMLAnalysis):
         :return:
         '''
         result = []
+
         jobs = soup.find_all('div','job-primary')
         for job in jobs:
+            jobId = job.find('div','info-primary').find('a')['data-jobid']
             result.append(job.find('div','job-title').string)     #获取职位名
             result.append(job.find('span', 'red').string)          #获取工资
             result.append(job.find('div', 'company-text').find('a').string)   #获取公司名称
@@ -101,8 +105,9 @@ class JobHTMLAnalysis(HTMLAnalysis):
             else:
                 result.append(response2[2])
                 result.append(response2[4])
-        print(result)
-        return result
+            job_info[jobId] = result
+        return job_info
+
 class DetailHTMLAnalysis(HTMLAnalysis):
     '''
     职位详情界面HTML解析
@@ -129,12 +134,19 @@ class DetailHTMLAnalysis(HTMLAnalysis):
         :param soup:
         :return:
         '''
-        result = []
-        detail = soup.find('div', 'detail-content').find('div', 'text').contents
-        for i in range(len(detail)):
+        logger.info('开始获取职位详情数据'+url)
+        job = soup.find('div','detail-op').find('a')['ka']
+        jobId = re.search(r'\d+',job).group(0)
+        details = soup.find('div', 'detail-content').find('div', 'text').contents
+        logger.info('获取了职位详情数据**'+str(len(details))+'***'+jobId)
+        assert details is not None, "未获取到职位详情数据"
+        for i in range(len(details)):
             if i % 2 != 0:
                 continue
-            if '年' in detail[i].strip():
-                if re.match(r'[1-9]', detail[i].strip()) and '经验' in detail[i].strip():
-                    result.append(detail[i].strip())
-        return result
+            if '年' in details[i].strip():
+                if re.match(r'[1-9]', details[i].strip()) and '经验' in details[i].strip():
+                    job_info[jobId].append(details[i].strip())
+        #details是一个列表，里边包含有tag和None，要过滤掉
+        detail = ''.join(i.strip() for i in details if type(i) is not 'bs4.element.Tag' and len(i)!=0).replace(' ','')
+        job_info[jobId].append(detail)
+        return job_info

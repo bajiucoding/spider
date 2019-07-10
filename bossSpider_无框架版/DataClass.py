@@ -25,6 +25,17 @@ class DataClass():
         with open('result.txt', 'a', encoding='utf-8') as f:
             f.write(str(data)+'\n')
 
+    def csvHelper(self):
+        '''
+        csv辅助方法。写标题。只会调用一次
+        :return:
+        '''
+        headers = ['职位ID','职位','工资','公司','地点','经验要求','学历要求','行业','融资情况','公司规模','实际年限要求','职位详情']
+        logger.info('向csv文件中写入标题')
+        file_csv = codecs.open('result.csv', 'a+', 'utf-8')
+        writer = csv.writer(file_csv)
+        writer.writerow(headers)
+
     def WriteCSV(self,data):
         '''
         将列表写入csv文件。
@@ -32,7 +43,7 @@ class DataClass():
         :return:
         '''
         logger.info('准备将数据写入csv文件中')
-        file_csv = codecs.open('result.csv', 'w+', 'utf-8')
+        file_csv = codecs.open('result.csv', 'a+', 'utf-8')
         writer = csv.writer(file_csv, delimiter=' ', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(data)
         print('保存成功')
